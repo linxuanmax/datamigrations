@@ -1,0 +1,14 @@
+版本依赖的软件版本是：
+python: 2.7
+
+elasticsearch:
+"version" : "1.1.1",
+"lucene_version" : "4.7"
+
+
+1/使用此安装包需要首先在globalvariable.py文件中配置任务列表。具体配置方法在文件中有详细的介绍及例子
+2/连接ES，及日志文件的配置在conf/mdstask.conf中配置
+3/程序需要以超级管理员的身份运行
+4/查询语句先在sql中测试一下有无错误，再写入globalvariable.py
+5/先把'con/migrations.conf'文件拷贝'/opt/migrations/migrations/conf/'
+6/如果采用systemctl的方式启动程序，则应把'service/datamigrations.service'放在'/etc/systemd/system/'下
