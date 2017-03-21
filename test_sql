@@ -1,0 +1,7 @@
+select index_name, display_index_name 
+from t_threatinfo_db
+group by index_name, display_index_name;
+
+select id, index_name, display_index_name, field_name, color, case when (display_name is null or trim(display_name) = '') then field_name else display_name end display_name
+from t_threatinfo_db
+where drill = 0;
