@@ -48,7 +48,8 @@ class ESData():
                             index_name: souce,
                             'thread': index_name,
                             '__ctime__': now_time,
-                            '__utime__': now_time
+                            '__utime__': now_time,
+                            '__valid__':'T'
                         }
                     }
                 else:
@@ -61,7 +62,8 @@ class ESData():
                             index_name: souce,
                             'thread': index_name,
                             '__ctime__': now_time,
-                            '__utime__': now_time
+                            '__utime__': now_time,
+                            '__valid__':'T'
                         }
                     }
                 actions.append(action)
