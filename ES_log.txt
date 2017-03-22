@@ -1,4 +1,4 @@
-从 本地 复制到 远程
+从 本地 复制到 远程   https://www.zhihu.com/question/19672568
 scp /home/daisy/full.tar.gz root@172.19.2.75:/home/root 
 从 远程 复制到 本地
 scp root@/172.19.2.75:/home/root/full.tar.gz /home/daisy/full.tar.gz
