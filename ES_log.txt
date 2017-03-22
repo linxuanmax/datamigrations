@@ -19,13 +19,23 @@ ElasticSearch 有4中方式来构建数据库，最简单的方法是使用index
 直接执行下列命令，删除多余副本
 curl -XPUT "http://localhost:9200/_settings" -d'{"number_of_replicas" : 0}'
 http://blog.csdn.net/lmh12506/article/details/7579498 : 倒排索引 原理 的详细解释
-数据查询
+数据查询    http://www.cnblogs.com/yjf512/p/4897294.html  主要讲解match与team 
 
 1、查询在idx_threat_intelligence索引中，类型为info_ac,从第二条查询，查询4条。
 GET idx_threat_intelligence/_search 
 {
   "from":2,
   "size":4
+}
+
+term是代表完全匹配，即不进行分词器分析，文档中必须包含整个搜索的词汇
+GET megacorp/_search
+{
+  "query": {
+    "term": {
+      "interests": "sports"
+    }
+  }
 }
 2、在idx_threat_intelligence索引中，类型为info_ac,查询字段name为qq
 GET idx_threat_intelligence/info_ac/_search 
@@ -37,3 +47,54 @@ GET idx_threat_intelligence/info_ac/_search
   }
   
 }
+3、用 multi_match  在多外字段中查找同一个数据或字符串 结构如图所示  第二个query是要查询的字段，fields是在哪个字段中进行查询
+GET megacorp/_search 
+{
+  "query":{
+    "multi_match":{
+      "query":"music",
+      "fields":["interests","about"]
+    }
+  }
+  
+}
+3、用operator确定查询的精度，例如：如果想要查询  sports 与 music 均存在就写 or 反之写 and 
+
+GET megacorp/_search
+{
+  "query": {
+    "match": {
+      "interests": {
+        "query": "sports music",
+        "operator": "or"
+      }
+    }
+  }
+}
+
+3、bool查询 一定有什么，一定没有什么， 可以有什么   如果bool 查询下没有 must 子句，那么至少应该有一个should子句。如果没有must句子，那么没有should子句也可以进行查询
+
+GET megacorp/_search
+{ 
+  "query": {
+    "bool": {
+      "must": [
+        {"range": {
+          "age": { "gte": 10}
+        }}
+      
+      ],
+      "must_not": [
+        {"match": {
+          "interests": "forestry"
+        }}
+      ],
+      "should": [
+        {"match": {
+          "first_name": "John"
+        }}
+      ]
+    }
+  }
+}
+4、查询与过滤条件的合并，查询语句和过滤语句可以放在各自的上下文中。 在 ElasticSearch API 中我们会看到许多带有query或filter的语句。这些语句既可以包含单条 query 语句,也可以包含一条 filter 子句。 换句话说,这些语句需要首先创建一个query或filter的上下文关系。查询语句可以包函过滤语句，过滤语句也可以包函查询语句。
