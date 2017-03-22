@@ -1,3 +1,8 @@
+从 本地 复制到 远程
+scp /home/daisy/full.tar.gz root@172.19.2.75:/home/root 
+从 远程 复制到 本地
+scp root@/172.19.2.75:/home/root/full.tar.gz /home/daisy/full.tar.gz
+
 curl -XPUT localhost:9200/megacorp/employee/1 -d '{"first_name" : "John","last_name" : "Smith","age" :25,"about" :"I love to go rock climbing","interests": [ "sports","music" ]}'
 curl -XPUT localhost:9200/megacorp/employee/2'{"first_name" : "Jane","last_name" :"Smith","age" :32,"about" :"I like to collect rock albums","interests": [ "music" ]}'
 curl -XPUT localhost:9200/megacorp/employee/3 -d '{"first_name" : "Douglas","last_name" :"Fir","age" :35,"about":"I like to build cabinets","interests": [ "forestry" ]}'
@@ -10,3 +15,25 @@ http://news.yesky.com/prnews/343/97768343.shtml
 ElasticSearch 有4中方式来构建数据库，最简单的方法是使用index API，将一个Document发送到特定的index，一般通过curl tools实现。
 第二第三种方法是通过bulk API和UDP  bulk API。两者的区别仅在于连接方式。
 第四种方式是通过一个插件-river。river运行在ElasticSearch上，并且可以从外部数据库导入数据到ES中。
+
+直接执行下列命令，删除多余副本
+curl -XPUT "http://localhost:9200/_settings" -d'{"number_of_replicas" : 0}'
+http://blog.csdn.net/lmh12506/article/details/7579498 : 倒排索引 原理 的详细解释
+数据查询
+
+1、查询在idx_threat_intelligence索引中，类型为info_ac,从第二条查询，查询4条。
+GET idx_threat_intelligence/_search 
+{
+  "from":2,
+  "size":4
+}
+2、在idx_threat_intelligence索引中，类型为info_ac,查询字段name为qq
+GET idx_threat_intelligence/info_ac/_search 
+{
+  "query":{
+    "match": {
+      "name": "qq"
+    }
+  }
+  
+}
