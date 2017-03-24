@@ -108,3 +108,31 @@ GET /megacorp/employee/_search
     }
   }
 }
+term过滤查询
+GET /information/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+        "term": {"college": {"value": "通"}}
+
+        },
+                {
+        "term": {"college": {"value": "信"}}
+
+        },
+                {
+        "term": {"college": {"value": "学"}}
+
+        },
+                {
+        "term": {"college": {"value": "院"}}
+
+        }
+
+      ]
+    }
+    
+  }
+}
