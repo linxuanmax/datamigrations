@@ -98,3 +98,13 @@ GET megacorp/_search
   }
 }
 4、查询与过滤条件的合并，查询语句和过滤语句可以放在各自的上下文中。 在 ElasticSearch API 中我们会看到许多带有query或filter的语句。这些语句既可以包含单条 query 语句,也可以包含一条 filter 子句。 换句话说,这些语句需要首先创建一个query或filter的上下文关系。查询语句可以包函过滤语句，过滤语句也可以包函查询语句。
+# 作用于多个字段上的查询
+GET /megacorp/employee/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "Jane Miked",
+      "fields": ["first_name", "interests","last_name"]
+    }
+  }
+}
