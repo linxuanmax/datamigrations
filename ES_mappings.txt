@@ -32,5 +32,18 @@ PUT /news
         }
     }
 }
+分析器由三部分组成   1，字符过滤器 2、分词器  3、分词过滤器
+
+2.1 字符过滤器
+
+首先字符串要按顺序依次经过几个字符过滤器(Character Filter)。它们的任务就是在分词（tokenization）前对字符串进行一次处理。字符过滤器能够剔除HTML标记，或者转换"&"为"and"。
+2.2 分词器
+
+下一步，字符串经过分词器(tokenizer)被分词成独立的词条（ the string is tokenized into individual terms by a tokenizer）。一个简单的分词器(tokenizer)可以根据空格或逗号将文本分成词条（A simple tokenizer might split the text into terms whenever it encounters whitespace or punctuation）。
+2.3 分词过滤器
+
+最后，每个词条都要按顺序依次经过几个分词过滤器(Token Filters)。可以修改词（例如，将"Quick"转为小写），删除词（例如，停用词像"a"、"and"、"the"等等），或者增加词（例如，同义词像"jump"和"leap"）。
+
+Elasticsearch提供很多开箱即用的字符过滤器，分词器和分词过滤器。这些可以组合来创建自定义的分析器以应对不同的需求。
 
 
