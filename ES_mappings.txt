@@ -1,0 +1,36 @@
+新建mappings 其中 employee 是类型（_type）mappings在确定之后只能增加某个字段。不能修改
+PUT /news
+{
+    "settings": {
+        "number_of_shards": 3,
+        "number_of_replicas": 0
+    }, 
+    "mappings": {
+        "employee": {
+            "properties": {
+                "first_name": {
+                    "type": "string"
+                }, 
+                "last_name": {
+                    "type": "string"
+                }, 
+                "age": {
+                    "type": "integer"
+                }, 
+                "about": {
+                    "type": "string"
+                }, 
+                "interests": {
+                    "type": "string"
+                }, 
+                "join_time": {
+                    "type": "date", 
+                    "format": "dateOptionalTime", 
+                    "index": "not_analyzed"
+                }
+            }
+        }
+    }
+}
+
+
