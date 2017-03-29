@@ -1,0 +1,30 @@
+对于准确值，需要使用过滤器，过滤器的重要性在于它非常的快，它们不计算相关性，而且很容易被缓存
+1\过滤与聚合
+GET /megacorp/employee/_search
+{
+  "query": {
+    "filtered": {
+      "query": {
+        "query_string": {
+          "fields": ["about", "interests"], 
+          "query": "love like"
+        }
+      },
+      "filter": {
+        "range": {
+          "age": {
+            "gte": 0,
+            "lte": 30
+          }
+        }
+      }
+    }
+  },
+  "aggs": {
+    "all_interests": {
+      "terms": {
+        "field": "interests"
+      }
+    }
+  }
+}
