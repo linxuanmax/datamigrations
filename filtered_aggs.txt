@@ -40,3 +40,43 @@ GET /megacorp/employee/_search?search_type=count
     }
   }
 }
+3\# 每种兴趣下职员的平均年龄    
+GET /_search
+{
+  "aggs": {
+    "all_interests": {
+      "terms": {
+        "field": "interests"
+      },
+      "aggs": {
+        "avg_age": {
+          "avg": {
+            "field": "age"
+          }
+        }
+      }
+    }
+  }
+}
+# IPS设备按日志类别分组统计的攻击日志量
+curl -XGET 'http://192.168.1.210:9200/datagroup-*/hw:h3c:secpath_ips/_search?pretty' -d '{
+  "query": {
+    "filtered": {    # 过滤
+      "query": {
+          "query_string": {    # 多字段查询
+          "default_operator": "AND",   # 查询方式 
+          "query": "data_type:attack AND (gw_src_ipv4:(>=168.160.10.0 AND <=168.160.10.255) OR gw_dst_ipv4:(>=168.160.10.0 AND <=168.160.10.255))"    #  query 中可以用OR AND 来使用 
+          }
+      }
+    }
+  },
+  "aggs" : {   # 聚合查询 对查询到的结果进行统计分析
+    "rzlb" : {
+      "terms" : {   
+        "field" : "log_type",
+        "size" : 0
+      }
+    }
+  },
+  "size": 0
+}'
