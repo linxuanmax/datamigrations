@@ -28,3 +28,15 @@ GET /megacorp/employee/_search
     }
   }
 }
+2\search_type=count,只返回聚合结果，不返回查询结果
+GET /megacorp/employee/_search?search_type=count
+{
+  "aggs": {
+    "interests": {
+      "terms": {
+        "field": "interests",
+        "size": 10
+      }
+    }
+  }
+}
