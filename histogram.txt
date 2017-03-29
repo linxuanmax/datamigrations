@@ -1,0 +1,108 @@
+Date histogram的用法与histogram差不多，只不过区间上支持了日期的表达式。
+
+{
+"aggs":{
+	"articles_over_time":{
+		"date_histogram":{
+			"field":"date",
+			"interval":"month"
+			}
+		}
+	}
+}
+
+interval字段支持多种关键字：`year`, `quarter`, `month`, `week`, `day`, `hour`, `minute`, `second`
+
+当然也支持对这些关键字进行扩展使用，比如一个半小时可以定义成如下：
+
+{
+	"aggs":{
+		"articles_over_time":{
+			"date_histogram":{
+				"field":"date",
+				"interval":"1.5h"
+				}
+			}
+		}
+}
+
+返回的结果可以通过设置format进行格式化:
+
+{
+"aggs":{
+	"articles_over_time":{
+		"date_histogram":{
+			"field":"date",
+			"interval":"1M",
+			"format":"yyyy-MM-dd"
+			}
+		}
+	}
+}
+
+得到的结果如下：
+
+{
+	"aggregations":{
+		"articles_over_time":{
+			"buckets":[{
+				"key_as_string":"2013-02-02",
+				"key":1328140800000,
+				"doc_count":1
+			},{
+				"key_as_string":"2013-03-02",
+				"key":1330646400000,
+				"doc_count":2
+			},
+			...
+			]}
+		}
+}
+
+其中key_as_string是格式化后的日期，key显示了是日期时间戳，
+time_zone时区的用法
+
+在es中日期支持时区的表示方法，这样就相当于东八区的时间。
+
+{
+	"aggs":{
+		"by_day":{
+			"date_histogram":{
+				"field":"date",
+				"interval":"day",
+				"time_zone":"+08:00"
+			}
+		}
+	}
+}
+
+offset 使用偏移值，改变时间区间
+
+默认情况是从凌晨0点到午夜24:00，如果想改变时间区间，可以通过下面的方式，设置偏移值：
+
+{"aggs":{
+	"by_day":{
+		"date_histogram":{
+			"field":"date",
+			"interval":"day",
+			"offset":"+6h"
+			}
+		}
+	}
+}
+
+那么桶的区间就改变为：
+
+"aggregations":{
+	"by_day":{
+		"buckets":[{
+			"key_as_string":"2015-09-30T06:00:00.000Z",
+			"key":1443592800000,
+			"doc_count":1
+		},{
+			"key_as_string":"2015-10-01T06:00:00.000Z",
+			"key":1443679200000,
+			"doc_count":1
+		}]
+	}
+}
