@@ -80,3 +80,33 @@ curl -XGET 'http://192.168.1.210:9200/datagroup-*/hw:h3c:secpath_ips/_search?pre
   },
   "size": 0
 }'
+
+4\流量分析
+GET /_search
+{
+  "query": {
+    "filtered": {
+      "query": {
+        "query_string": {
+          "query": "_exists_:IPV4_SRC_ADDR"
+        }
+      }
+    }
+  },
+  "aggs": {
+    "flows": {
+      "date_histogram": {
+        "field": "@timestamp",
+        "interval": "month"
+      },
+      "aggs": {
+        "sum_OUT": {
+          "sum": {"field": "OUT_BYTES"}
+        },
+        "sum_IN": {
+          "sum": {"field": "IN_BYTES"}
+        }
+      }
+    }
+  }
+}
