@@ -1,0 +1,65 @@
+redis.conf文件
+input {
+    redis {
+        type=>"redis-data-A"
+        data_type => "list"
+        key => "listA"
+        host => "192.168.2.4"
+        port => 6379
+        threads =>1
+    }
+    redis {
+        type=>"redis-data-B"
+        data_type => "list"
+        key => "listB"
+        host => "192.168.2.4"
+        port => 6379
+        threads =>1
+}
+output {
+
+        if [type] == "redis-data-A"{
+
+                elasticsearch {
+
+                        hosts => "localhost:9200"
+                        index => "logstash_event_a-%{+YYYY.MM.dd}"
+
+                                }
+
+                stdout { codec => rubydebug }
+
+        }
+
+        else if [type] == "redis-data-B"{
+
+                elasticsearch {
+
+                        hosts=> "localhost:9200"
+                        index => "logstash_event_b-%{+YYYY.MM.dd}"
+
+                }
+              stdout { codec => rubydebug }
+}
+在redis-cli中输入rpush listB '{"name":"TOm", "age":12}'即可传入ES中
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
