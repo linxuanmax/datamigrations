@@ -43,8 +43,36 @@ output {
               stdout { codec => rubydebug }
 }
 在redis-cli中输入rpush listB '{"name":"TOm", "age":12}'即可传入ES中
-
-
+结果
+{
+  "took" : 1,
+  "timed_out" : false,
+  "_shards" : {
+    "total" : 5,
+    "successful" : 5,
+    "failed" : 0
+  },
+  "hits" : {
+    "total" : 3,
+    "max_score" : 1.0,
+    "hits" : [ {
+      "_index" : "logstash_event_b-2017.03.30",
+      "_type" : "redis-data-B",
+      "_id" : "fWLe9RkgRMqV0kroXyoNGQ",
+      "_score" : 1.0, "_source" : {"@timestamp":"2017-03-30T06:47:07.236Z","name":"TOm","@version":"1","type":"redis-data-B","age":12}
+    }, {
+      "_index" : "logstash_event_b-2017.03.30",
+      "_type" : "redis-data-B",
+      "_id" : "G5Mm0f19Ti6veP645i6zyw",
+      "_score" : 1.0, "_source" : {"@timestamp":"2017-03-30T07:29:04.608Z","name":"qiang","@version":"1","type":"redis-data-B","age":25}
+    }, {
+      "_index" : "logstash_event_b-2017.03.30",
+      "_type" : "redis-data-B",
+      "_id" : "pezy0NwSRCCh49YmAEU5_w",
+      "_score" : 1.0, "_source" : {"@timestamp":"2017-03-30T06:47:07.230Z","name":"Jack","@version":"1","type":"redis-data-B","age":12}
+    } ]
+  }
+}
 
 
 
