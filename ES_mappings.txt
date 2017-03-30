@@ -47,3 +47,64 @@ PUT /news
 Elasticsearch提供很多开箱即用的字符过滤器，分词器和分词过滤器。这些可以组合来创建自定义的分析器以应对不同的需求。
 
 
+ex.
+POST /schools 
+{
+  "mapping":{
+    "solutions":{
+      "_all":{
+        "enable":"True"
+      },
+      "_source":{
+        "compress":"True",
+        "enable":"False"
+      },
+      "properties": {
+          "threatdb": {
+			    "type": "string"
+		      },
+	    	  "__ctime__": {
+			    "type": "date",
+			    "format" : "dateOptionalTime"
+        },
+        "solutions":{
+          "dynamic": false,
+			"properties": {
+				"id": {
+					"type": "multi_field",
+					"fields": {
+						"rawid": {
+							"norms": { "enabled": false },
+							"path": "just_name",
+							"index": "not_analyzed",
+							"type": "string"
+						},
+						"id": {
+							"norms": { "enabled": false },
+							"path": "just_name",
+							"type": "string"
+						}
+					}
+				},
+				"resource": {
+					"type": "multi_field",
+					"fields": {
+						"rawresource": {
+							"norms": { "enabled": false },
+							"path": "just_name",
+							"index": "not_analyzed",
+							"type": "string"
+						},
+						"resource": {
+							"norms": { "enabled": false },
+							"path": "just_name",
+							"type": "string"
+						}
+					}
+				}
+			}
+        }
+      }
+    }
+  }
+}
