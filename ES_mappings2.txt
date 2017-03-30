@@ -1,0 +1,54 @@
+我们可将Mapping信息大致分成settings和mappings两个部分，settings主要是作用于index的一些相关配置信息，如分片 数、副本数等、tranlog同步条件、refresh条条等。Mappings部分 主是要结果构的一些说明,mappings 我们可以看到主体上大致又分成_all、_source、properites这三个部分。
+mapping-->settings
+
+"settings": {
+	"number_of_shards": 1,   (number_of_shards:主分片的数量)
+	"number_of_replicas": 0, （number_of_shards:副分片数量）
+	"index.refresh_interval": "-1",  （刷新的间隔时间）（1）
+	"index.translog.flush_threshold_ops": "100000" （2）
+},
+
+（1）如果需要一次加载较大的数据量进 index 里面时，可以先禁用 refresh ，把 index.refresh_interval 设置成为 -1 ，把 index.number_of_replicas 设置成 0。暂时把多个shard副本关闭（即如果当前index发生损坏便用丢失数据），但是这样做可以大大加快索引速度。当初始化索引完成，可以 将 index.refresh_interval 和 index.number_of_replicas 设置回原来的值。重新设置的方式：
+ curl -XPUT localhost:9200/information/_settings? -d '{"index.refresh_interval":0}'
+curl -XPUT localhost:9200/information/_settings? -d '{"number_of_replicas":0}'
+（2）每个碎片都有一个事务日志文件，事务日志文件主要是为了保证索引写和删除过程的可靠性，你不需要显式的去提交每个请求（对应于lucene的commit），这一切都是自动的，你也可以显式的执行flush操作来进行请求的提交，还可以使用下面这些参数来进行控制:
+index.translog.flush_threshold_ops：设置当累计操作达到多少时就执行flush操作，默认值 5000
+index.translog.flush_threshold_size：一旦你的事务日志文件的大小（translog）达到设置的这个值，则开始执行flush操作，默认值500mb
+index.translog.flush_threshold_period：每隔多长时间执行一次flush，默认 60m.
+{
+"mappings":
+    {
+    "solution": {
+            "_all": {
+                "analyzer": "ik_smart",
+                "search_analyzer": "ik_smart",
+                "term_vector": "no",
+                "store": "false"
+            },
+            "properties": {
+                "btype": {
+                     "type": "string",
+                     "index": "not_analyzed"
+                },
+                "title": {
+                    "type": "string",
+                    "store": "yes",
+                    "term_vector": "with_positions_offsets",
+                    "analyzer": "ik_smart",
+                    "search_analyzer": "ik_smart",
+                    "include_in_all": "true",
+                    "boost": 8
+                },
+                "update_time": {
+                    "type": "date",
+                    "store": "yes",
+                    "format": "dateOptionalTime"
+                 }
+            }
+        }
+    }
+}
+
+
+mappings 主体上大致又分成_all、_source、properites这三个部分。  “solution”_type
+1、_all：主要指的是All Field字段，我们可以将一个或都多个包含进不，在进行检索时无需指定字段的情况下检索多个字段。前提是你得开启All Field字段    “_all” : {“enabled” : true}
