@@ -7,7 +7,7 @@ input {
         host => "192.168.2.4"
         port => 6379
         threads =>1
-    }
+        }
     redis {
         type=>"redis-data-B"
         data_type => "list"
@@ -15,6 +15,7 @@ input {
         host => "192.168.2.4"
         port => 6379
         threads =>1
+        }
 }
 output {
 
