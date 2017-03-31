@@ -7,6 +7,8 @@ mapping-->settings
 	"index.refresh_interval": "-1",  （刷新的间隔时间）（1）
 	"index.translog.flush_threshold_ops": "100000" （2）
 },
+ES 存储文件的过程：
+es建索引写入数据，数据最先是存在内存buffer里的，然后再刷入到lucene的底层文件segment中；写入segment完毕后再执行refresh操作，refresh操作后，数据将commit到磁盘中。数据刷入到了磁盘，就可以执行查询操作了。过程简单描述如下：内存buffer-->segment-->refresh-->磁盘   注意，这些过程，会有translog记录；translog存在的意义就是保证数据刷入的可靠性；因为我们刚才说过，es建索引写入数据的过程是内存 到磁盘的过程，这个过程有日志的记录，那就是translog，当数据还在内存里没刷到磁盘中时，如果服务器down了又没translog机制的话，那 么数据就会丢失，有了translog，服务器down机后再起来，就能很快恢复写入的过程。这里要注意的是，translog也是先存在内存里的，然后默认5秒刷一次写到硬盘里。
 
 （1）如果需要一次加载较大的数据量进 index 里面时，可以先禁用 refresh ，把 index.refresh_interval 设置成为 -1 ，把 index.number_of_replicas 设置成 0。暂时把多个shard副本关闭（即如果当前index发生损坏便用丢失数据），但是这样做可以大大加快索引速度。当初始化索引完成，可以 将 index.refresh_interval 和 index.number_of_replicas 设置回原来的值。重新设置的方式：
  curl -XPUT localhost:9200/information/_settings? -d '{"index.refresh_interval":0}'
@@ -50,5 +52,183 @@ index.translog.flush_threshold_period：每隔多长时间执行一次flush，�
 }
 
 
-mappings 主体上大致又分成_all、_source、properites这三个部分。  “solution”_type
-1、_all：主要指的是All Field字段，我们可以将一个或都多个包含进不，在进行检索时无需指定字段的情况下检索多个字段。前提是你得开启All Field字段    “_all” : {“enabled” : true}
+mappings 主体上大致又分成_all、_source、properites这三个部分。  
+“solution”是_type,
+
+1、_all：主要指的是All Field字段，我们可以将一个或都多个包含进不，在进行检索时无需指定字段的情况下检索多个字段。前提是开启All Field字段    “_all” : {“enabled” : true}
+ElasticSearch默认为每个被索引的文档都定义了一个特殊的域 - '_all'，它自动包含被索引文档中一个或者多个域中的内容， 在进行搜索时，如果不指明要搜索的文档的域，ElasticSearch则会去搜索_all域。_all带来搜索方便，其代价是增加了系统在索引阶段对CPU和存储空间资源的开销。
+默认情况，ElasticSarch自动使用_all所有的文档的域都会被加到_all中进行索引。可以使用"_all" : {"enabled":false} 开关禁用它。如果某个域不希望被加到_all中，可以使用 "include_in_all":false
+2、_source:主 要指的是Source Field字段Source可以理解为Es除了将数据保存在索引文件中，另外还有一分源数据。_source字段我在们进行检索时相当重要，如果在 {“enabled” : false}情况下默认检索只会返回ID，你需通过Fields字段去倒索索引中去取数据，当然效率不是很高。如果觉得enabale:true时，索引 的膨涨率比较大的情况下可以通过下面一些辅助设置进行优化：
+Compress:是否进行压缩，建议一般情况下将其设为true
+“includes” : ["author", "name"],
+“excludes” : ["sex"]
+上面的includes和 excludes主要是针对默认情况下面_source一般是保存全部Bulk过去的数据，我们可以通过include,excludes在字段级别上做出一些限索。
+
+3、properities:字段的属性，字段的属性包括一些通用的属性(index_name, index, store, null_value),具体的某个字段的属性要根据字段的类型进行设置。
+（1）index:
+a. 如果是no，则无法通过检索查询到该字段； 
+b. 如果设置为not_analyzed则会将整个字段存储为关键词，常用于汉字短语、邮箱等复杂的字符串（查询整个字段值的时候才能查到）； 
+c. 如果设置为analyzed则将会通过默认的standard分析器进行分析
+(2) index_name:存储在索引中的字段名称，如果没有指定，则默认为字段定义对象的名称，通常忽略该属性。
+(3) store:在ES中原始的文本会存储在_source里面（除非你关闭了它）。默认情况下其他提取出来的字段都不是独立存储的，是从_source里面提取出来的。当然你也可以独立的存储某个字段，只要设置store:true即可。独立存储某个字段，在频繁使用某个特殊字段时很常用。而且获取独立存储的字段要比从_source中解析快得多，而且额外你还需要从_source中解析出来这个字段，尤其是_source特别大的时候。不过需要注意的是，独立存储的字段越多，那么索引就越大；索引越大，索引和检索的过程就会越慢。
+(4) boost:用于定义该值在文档中的重要性，默认该值为1,值越高说明越重要。
+(5) include_in_all：true/false	如果设置某个字段为false的时候，通过该字段可能索引到，但如果通过所有的字段进行索引的时候不能索引到。如：
+GET my_index/_search 
+{
+  "query": {
+    "query_string": {
+      "query": "xiao"
+    }
+  }
+}                不能索引到
+GET my_index/_search 
+{
+  "query": {
+    "query_string": {
+      "fields": ["name"], 
+      "query": "xiao"
+    }
+  }
+}               可以索引到   即一定要通过该字段才能索引到该字段下面的内容
+(6) analyzed:分词过滤器
+(7) 
+各个字段类型详细解释：
+（1）：string
+type: “string”    字符串类型
+index: “analyzed”  分词，具体参见properities
+analyzer:”standard”   分词器，分词器的具体类型在后面解释。
+boost:1.23 字段级别的分数加权
+doc_values:false   对not_analyzed字段，默认都是开启，分词字段不能使用，对排序和聚合能提升较大性能，节约内存, 当值为false时，就会使用磁盘存储这个字段，而不先是存储在内在中。（参见ES存储的过程 ）
+fielddata:{“format”:”disables”}  针对分词字段，参与排序或聚合时能提高性能，不分词字段统一建议使用doc_values
+fields:{“raw”:{“typy”:”string”,”index”:”not_analyzed”}}  可以对一个字段提供多种索引模式，同一个字段的值，一个分词，一个不分词
+ignore_obve:10 超过 10个字符的文本，将会被忽略，不被索引
+include_in_all:ture  设置是否此字段包含在_all字段中，默认是true，除非index设置成no选项
+search_analyzer: “ik”   设置搜索时的分词器，默认跟ananlyzer是一致的，比如index时用standard+ngram，搜索时用standard用来完成自动提示功能
+index_options:"docs"//4个可选参数docs（索引文档号）,freqs（文档号+词频），positions（文档号+词频+位置，通常用来距离查询），offsets（文档号+词频+位置+偏移量，通常被使用在高亮字段）分词字段默认是position，其他的默认是docs
+norms:{"enable":true,"loading":"lazy"}//分词字段默认配置，不分词字段：默认{"enable":false}，存储长度因子和索引时boost，建议对需要参与评分字段使用，会额外增加内存消耗量null_value:"NULL"//设置一些缺失字段的初始化值，只有string可以使用，分词字段的null值也会被分词
+position_increament_gap:0//影响距离查询或近似查询，可以设置在多值字段的数据分词字段上，查询时可指定slop间隔，默认值是100
+store":false//是否单独设置此字段的是否存储而从_source字段中分离，默认是false，只能搜索，不能获取值
+（2）数字类型
+long：64位存储
+integer：32位存储
+short：16位存储
+byte：8位存储
+double：64位双精度存储
+float：32位单精度存储
+（单精度为在计算机中存储占用4个字节，也就是32位，有效数为7位。  双精度（double）在计算机中存储占用8字节，64位，有效位数为16位。）  在实际实验中各类型均是16位
+coerce：如果设置为false时，传入的值不是数字的时候会报异常，特别：当为””的时候不报异常，当设置为true的时候可以接受字符如：”12”,且不报异常，但不能是字符串如：”abc”   ，在查询的时候使用 12与”12”均可以查询到
+boost：索引时加权因子
+doc_value：是否开启doc_value
+ignore_malformed：false（错误的数字类型会报异常）true（将会忽略，即可以输入如：“123”）
+include_in_all：是否包含在_all字段中
+index:not_analyzed默认不分词
+precision_step：额外存储对应的term，用来加快数值类型在执行范围查询时的性能，索引体积相对变大store：是否存储具体的值
+（3）日期
+type:date
+format: “YYYY_-mm-dd”  该属性可用于指定日期格式，可自定义日期的格式
+ignore_malformed：false（错误的数字类型会报异常）true（将会忽略）
+（4）multi_field类型
+multi_field 多域类型允许你对同一个值以映射的方式定义成多个基本类型 core_types . 这个非常有用，比如，如果你定义一个 string 类型的字段，你需要这个字段的分词一会是 analyzed ，但是有时候又希望该字段是 not_analyzed 类型的，通过使用 multi_field 就可以很方便的解决这个问题. 
+例如：
+PUT /my_index
+{
+  "settings": {
+    "number_of_shards": 5,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "my_type": {
+      "dynamic": "strict",
+      "properties": {
+        "name":{
+          "type": "multi_field",
+          "fields": {
+            "isname":{
+              "type": "string",
+              "index": "not_analyzed"
+            },
+            "unname":{
+              "type": "string",
+              "index": "analyzed"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+在插入数据之后，如果通过 :
+GET my_index/_search 
+{
+  "query": {
+    "match": {
+      "isname": "xiao" 或”name”:”xiao”
+    }
+  }
+}
+不能找到数据，但是
+GET my_index/_search 
+{
+  "query": {
+    "match": {
+      "unname": "xiao"或”name.unname”:”xiao”
+    }
+  }
+}
+可以找到数据
+
+补充：
+（1）ES中有一个非常重要的特性——动态映射，即索引文档前不需要创建索引、类型等信息，在索引的同时会自动完成索引、类型、映射的创建。那么什么是映射呢？映射就是描述字段的类型、如何进行分析、如何进行索引等内容。
+当ES在文档中碰到一个以前没见过的字段时，它会利用动态映射来决定该字段的类型，并自动地对该字段添加映射。
+有时这正是需要的行为，但有时不是，需要留意。你或许不知道在以后你的文档中会添加哪些字段，但是你想要它们能够被自动地索引。或许你只是想要忽略它们。或者，尤其当你将ES当做主要的数据存储使用时，大概你会希望这些未知的字段会抛出异常来提醒你注意这一问题。
+幸运的是，你可以通过dynamic设置来控制这一行为，它能够接受以下的选项：
+true：默认值。动态添加字段
+false：忽略新字段（在搜索的时候，如果利用新增加的字段进行搜索，则忽略这个字段，即通过		这个字段找不到相应的内容，但通过其它字段查找到记录的时候会显示这个字段）
+strict：如果碰到陌生字段，抛出异常
+dynamic设置可以适用在根对象上或者object类型的任意字段上。你应该默认地将dynamic设置为strict，但是为某个特定的内部对象启用它
+PUT /my_index
+{
+    "mappings": {
+        "my_type": {
+            "dynamic":      "strict", 
+            "properties": {
+                "title":  { "type": "string"},
+                "stash":  {
+                    "type":     "object",
+                    "dynamic":  true 
+                }
+            }
+        }
+    }
+}
+在my_type对象上如果碰到了未知字段则会抛出一个异常。 在stash对象上会动态添加新字段。
+通过以上的映射，你可以向stash添加新的可搜索的字段：
+PUT /my_index/my_type/1
+{
+  "title": "This doc adds a new field",
+  "stash": {
+    "new_field": "Success!"
+  }
+}
+但是，如果在顶层对象上试图添加新字段则会失败：
+PUT /my_index/my_type/1
+{
+    "title":     "This throws a StrictDynamicMappingException",
+    "new_field": "Fail!"
+}
+（2）嵌套（字段嵌套），无嵌套即在一个类型的字段下平阶N个字段，如上面的例子中，类型my_type下有两个字段为title和stash,即:
+{
+	my_type:{
+		title:{}
+		stash:{}
+	}
+}
+有嵌套：即在一个类型的字段下平阶N个字段，在N个字段下又有M个字段，类型my_type下有两个字段为title和stash,在stash下又有一个字段new_title,即：
+{
+	my_type:{
+		title:{}
+		stash:{
+			new_field：{}
+			}
+	}
+}
