@@ -63,8 +63,18 @@ Compress:是否进行压缩，建议一般情况下将其设为true
 “includes” : ["author", "name"],
 “excludes” : ["sex"]
 上面的includes和 excludes主要是针对默认情况下面_source一般是保存全部Bulk过去的数据，我们可以通过include,excludes在字段级别上做出一些限索。
+3、_id: 参数有path 通过path可以指定id使用那个字段的值作为id值。如
+  "mappings": {
+    "user":{
+      "_id": {"path": "information"}, 
+      "properties": {
+        "information":{
+          "type": "object"
+        }
+      }
+4、_index:是否建立索引 enable 属性 true 或者 false
 
-3、properities:字段的属性，字段的属性包括一些通用的属性(index_name, index, store, null_value),具体的某个字段的属性要根据字段的类型进行设置。
+5、properities:字段的属性，字段的属性包括一些通用的属性(index_name, index, store, null_value),具体的某个字段的属性要根据字段的类型进行设置。
 （1）index:
 a. 如果是no，则无法通过检索查询到该字段； 
 b. 如果设置为not_analyzed则会将整个字段存储为关键词，常用于汉字短语、邮箱等复杂的字符串（查询整个字段值的时候才能查到）； 
@@ -90,12 +100,13 @@ GET my_index/_search
     }
   }
 }               可以索引到   即一定要通过该字段才能索引到该字段下面的内容
-(6) analyzed:分词过滤器
-(7) 
+(6) analyzer:分析器
+(7) include_in_root:
 各个字段类型详细解释：
+一、核心数据类型
 （1）：string
 type: “string”    字符串类型
-index: “analyzed”  分词，具体参见properities
+index: “analyzed”  分词，not_analyzed 不分词具体参见properities
 analyzer:”standard”   分词器，分词器的具体类型在后面解释。
 boost:1.23 字段级别的分数加权
 doc_values:false   对not_analyzed字段，默认都是开启，分词字段不能使用，对排序和聚合能提升较大性能，节约内存, 当值为false时，就会使用磁盘存储这个字段，而不先是存储在内在中。（参见ES存储的过程 ）
@@ -127,6 +138,142 @@ precision_step：额外存储对应的term，用来加快数值类型在执行�
 type:date
 format: “YYYY_-mm-dd”  该属性可用于指定日期格式，可自定义日期的格式
 ignore_malformed：false（错误的数字类型会报异常）true（将会忽略）
+（4）布尔类型
+取值为True 或Flase
+（5）二进制类型
+"type": "binary"
+
+二、复杂数据类型
+（1）嵌套类型
+“type”:”nested”
+适合存储json嵌套类型的数据如：
+
+
+PUT xiaorui.cc/blog/1
+{
+  "group" : "fans",
+  "user" : [ 
+    {
+      "first" : "fengyun",
+      "last" :  "rui"
+    },
+    {
+      "first" : "dehua",
+      "last" :  "liu"
+    },
+    {
+      "first" : "fengyun",
+      "last" :  "liu"
+    }
+  ]
+}
+建立映射：
+PUT /my_index_one
+{
+  "settings": {
+    "number_of_shards": 5,
+    "number_of_replicas": 1,
+    "refresh_interval": "1s"
+  },
+  "mappings": {
+    "user":{
+      "properties": {
+        "number_group":{
+          "type": "nested"
+        },
+        "number_group_one":{
+          "type": "nested"
+        }
+      }
+    }
+  }
+
+}
+
+把上面的数据插入，然后查询要带有路径
+GET /my_index_one/_search
+{
+  "query": {
+    "nested": {
+      "path": "number_group_one",
+      "query": {
+        "match": {
+          "number_group_one.first":"xiguo"
+        }
+      }
+    }
+  }
+}
+“path”定义嵌套的对象，可以是列表。
+“query”里面一定要用全路径。如：“number_group_one.first”, number_group_one 是user下的一个字段，first是number_group_one下的一个键。
+（2）对象类型 （object  datatype）
+用于单个json对象
+映射：
+PUT /my_index_two
+{
+  "settings": {
+    "number_of_shards": 5,
+    "number_of_replicas": 1,
+    "refresh_interval": "1s"
+  },
+  "mappings": {
+    "user":{
+      "properties": {
+        "information":{
+          "type": "object"
+        }
+      }
+    }
+  }
+}
+数据：
+PUT /my_index_two/user/1
+{
+  "information":{
+    "name":"hong",
+    "age":24,
+    "address":"biejing"
+  }
+}
+查询：
+GET /my_index_two/_search
+{
+  "query": {
+    "match": {
+      "information.address": "biejing"  或 ”address”:”biejing”
+    }
+  }
+}
+三、地理位置类型
+（1）地理坐标类型：geo_point 用于经纬度坐标
+建立映射：
+PUT /my_index_three
+{
+  "settings": {
+    "number_of_shards": 5,
+    "number_of_replicas": 1,
+    "refresh_interval": "1s"
+  },
+  "mappings": {
+    "user":{
+      "properties": {
+        "locate":{
+          "type": "geo_point"
+        }
+      }
+    }
+  }
+}
+插入数据：
+PUT /my_index_three/user/1
+{
+  "locate":"30.000, -70.000"  或 “locate”:{“lat”: 30.00, “lon”:-70.00}  或 “locate”:[30.00, 70.00]
+}
+（2）地理形状类型
+geo_shape  用于类似于多边形的复杂形状
+四、特定类型
+IPv4 类型：ip用于IPv4类型
+
 （4）multi_field类型
 multi_field 多域类型允许你对同一个值以映射的方式定义成多个基本类型 core_types . 这个非常有用，比如，如果你定义一个 string 类型的字段，你需要这个字段的分词一会是 analyzed ，但是有时候又希望该字段是 not_analyzed 类型的，通过使用 multi_field 就可以很方便的解决这个问题. 
 例如：
