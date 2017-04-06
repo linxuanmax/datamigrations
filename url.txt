@@ -3,3 +3,4 @@ https://github.com/unfetter-discover/cti-stix-store
 debian安装node.js
 curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -  
 sudo apt-get install -y nodejs
+后台运行docker 镜像  docker-compose up -d
