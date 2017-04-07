@@ -379,3 +379,51 @@ PUT /my_index/my_type/1
 			}
 	}
 }
+一个完整的自定义分析器：uuid 是自已生成 的
+{
+   "my_index": {
+      "settings": {
+         "index": {
+            "analysis": {
+               "filter": {
+                  "my_stopwords": {
+                     "type": "stop",
+                     "stopwords": [
+                        "the",
+                        "a"
+                     ]
+                  }
+               },
+               "analyzer": {
+                  "my_analyzer": {
+                     "filter": [
+                        "lowercase",
+                        "my_stopwords"
+                     ],
+                     "char_filter": [
+                        "html_strip",
+                        "&_to_and"
+                     ],
+                     "type": "custom",
+                     "tokenizer": "standard"
+                  }
+               },
+               "char_filter": {
+                  "&_to_and": {
+                     "type": "mapping",
+                     "mappings": [
+                        "&=> and "
+                     ]
+                  }
+               }
+            },
+            "number_of_shards": "5",
+            "number_of_replicas": "1",
+            "version": {
+               "created": "1010199"
+            },
+            "uuid": "EXKOWNRSQNSHaTF2A1paFg"
+         }
+      }
+   }
+}
