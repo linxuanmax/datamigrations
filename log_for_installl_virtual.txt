@@ -1,0 +1,5 @@
+这个是需要开启VT(Vritual  Technology)因特尔虚拟化技术。
+
+1、进入Bios，开机时不停地按Delete键，进入Bios
+2、上下左右方向键选择advanced，找到Vritual  Technology
+3、设置为Disabled，完成。
